@@ -1,0 +1,126 @@
+//===----------------------------------------------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+// <map>
+
+// class map
+
+// map(initializer_list<value_type> il, const key_compare& comp, const allocator_type& a);
+
+#include "defs.h"
+
+#include "contiguous/map.h"
+#include "catch.hpp"
+#include "test_compare.h"
+#include "test_allocator.h"
+#include "min_allocator.h"
+
+TEST_CASE("map cons initializer list compare alloc pass")
+{
+#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+    {
+    typedef std::pair<const int, double> V;
+    typedef test_compare<std::less<int> > C;
+    typedef test_allocator<std::pair<const int, double> > A;
+    contiguous::map<int, double, C, A> m({
+                                   {1, 1},
+                                   {1, 1.5},
+                                   {1, 2},
+                                   {2, 1},
+                                   {2, 1.5},
+                                   {2, 2},
+                                   {3, 1},
+                                   {3, 1.5},
+                                   {3, 2}
+                                  }, C(3), A(6));
+    REQUIRE(m.size() == 3);
+    REQUIRE(distance(m.begin(), m.end()) == 3);
+    REQUIRE(*m.begin() == V(1, 1));
+    REQUIRE(*next(m.begin()) == V(2, 1));
+    REQUIRE(*next(m.begin(), 2) == V(3, 1));
+    REQUIRE(m.key_comp() == C(3));
+    REQUIRE(m.get_allocator() == A(6));
+    }
+#if TEST_STD_VER >= 11
+    {
+    typedef std::pair<const int, double> V;
+    typedef test_compare<std::less<int> > C;
+    typedef min_allocator<std::pair<const int, double> > A;
+    contiguous::map<int, double, C, A> m({
+                                   {1, 1},
+                                   {1, 1.5},
+                                   {1, 2},
+                                   {2, 1},
+                                   {2, 1.5},
+                                   {2, 2},
+                                   {3, 1},
+                                   {3, 1.5},
+                                   {3, 2}
+                                  }, C(3), A());
+    REQUIRE(m.size() == 3);
+    REQUIRE(distance(m.begin(), m.end()) == 3);
+    REQUIRE(*m.begin() == V(1, 1));
+    REQUIRE(*next(m.begin()) == V(2, 1));
+    REQUIRE(*next(m.begin(), 2) == V(3, 1));
+    REQUIRE(m.key_comp() == C(3));
+    REQUIRE(m.get_allocator() == A());
+    }
+#if TEST_STD_VER > 11
+    {
+    typedef std::pair<const int, double> V;
+    typedef min_allocator<V> A;
+    typedef test_compare<std::less<int> > C;
+    typedef contiguous::map<int, double, C, A> M;
+    A a;
+    M m ({ {1, 1},
+           {1, 1.5},
+           {1, 2},
+           {2, 1},
+           {2, 1.5},
+           {2, 2},
+           {3, 1},
+           {3, 1.5},
+           {3, 2}
+          }, a);
+
+    REQUIRE(m.size() == 3);
+    REQUIRE(distance(m.begin(), m.end()) == 3);
+    REQUIRE(*m.begin() == V(1, 1));
+    REQUIRE(*next(m.begin()) == V(2, 1));
+    REQUIRE(*next(m.begin(), 2) == V(3, 1));
+    REQUIRE(m.get_allocator() == a);
+    }
+#endif
+    {
+    typedef std::pair<const int, double> V;
+    typedef explicit_allocator<V> A;
+    typedef test_compare<std::less<int> > C;
+    A a;
+    contiguous::map<int, double, C, A> m({
+                                   {1, 1},
+                                   {1, 1.5},
+                                   {1, 2},
+                                   {2, 1},
+                                   {2, 1.5},
+                                   {2, 2},
+                                   {3, 1},
+                                   {3, 1.5},
+                                   {3, 2}
+                                  }, C(3), a);
+    REQUIRE(m.size() == 3);
+    REQUIRE(distance(m.begin(), m.end()) == 3);
+    REQUIRE(*m.begin() == V(1, 1));
+    REQUIRE(*next(m.begin()) == V(2, 1));
+    REQUIRE(*next(m.begin(), 2) == V(3, 1));
+    REQUIRE(m.key_comp() == C(3));
+    REQUIRE(m.get_allocator() == a);
+    }
+#endif
+#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+}

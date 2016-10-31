@@ -27,8 +27,9 @@ C++14 [multi]{set,map} interface on a sorted vector.
 ## Requirements
  The requirements depend on the operations performed, but:
 
- - the requirements for a [multi]set stay practically the same as
-  for a Container\<Key\>.
+ - the requirements for a [multi]set are mostly the same as
+  for a Container\<Key\>. Also, range/initializer list insertion requires
+  value_type to be MoveAssignable.
  - [multi]map needs to store a std::pair\<const Key,T\> (by default).
   The const-qualified key makes the pair non-assignable. To mitigate this,
   a wrapper is used that requires the following to be true:
@@ -51,14 +52,25 @@ std::is_move_constructible<T>::value
 ```
 
 ## Additional notes
+ - Using a wrapper means that the general container requirement 23.2.1.3 is violated.
+ (Allocator::construct and Allocator::destruct must be used only with value_type).
+ There's no easy way around it, as it's the underlying container that handles those calls,
+ and its value_type is the wrapper.
  - The iterator wrappers for [multi]map are SCARY if the Container iterators
  are SCARY (they depend on the Container iterators, [multi]map::pointer
  and [multi]map::value_type).
  - The implementation is based on the working draft n4296 of the C++ Standard.
- - The containers were tested using modified libc++ unit tests.
+
+## Unit tests
+ - The containers were tested using modified libc++ unit tests on Windows (Visual Studio 14).
+ At some point, I will refactor the code to work with GCC/Linux.
+ - You can build and run the tests using CMake. The framework i Catch, so running the
+  Test executable provides the best results, but ctest also works.
 
 ## License and feedback
 
 The code was written as a programming exercise by me (Matt Garstka) and
-is provided under the MIT/Expat license. If you have any feedback, please let me know
+is provided under the MIT license. If you have any feedback, please let me know
 via email.
+
+libc++ unit tests are provided under the MIT license (see test/LICENSE.txt).
