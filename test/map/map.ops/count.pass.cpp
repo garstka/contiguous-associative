@@ -100,7 +100,7 @@ TEST_CASE("map ops count pass")
     }
     }
 #endif
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef std::pair<const int, double> V;
     typedef contiguous::map<int, double, std::less <>> M;

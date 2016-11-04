@@ -1,9 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <stdexcept>
-
-#include "contiguous_single_base.h"
+#include "internal/contiguous_single_base.h"
 
 /**
     @file map.h
@@ -36,6 +34,8 @@ private:
 	// the base class, same as above
 	using MyBase = contiguous_single_base<
 	    internal::map_traits<Key, T, Compare, Alloc, Container>>;
+
+	using typename MyBase::impl_container_type;
 
 public:
 	//! @name types
@@ -169,7 +169,7 @@ public:
 
 	//! Move-assigns other.
 	map& operator=(map&& other) noexcept(
-	    noexcept(MyBase::operator=(std::move(other))))
+	    noexcept(other.MyBase::operator=(std::move(other))))
 	{
 		MyBase::operator=(std::move(other));
 		return *this;
@@ -195,7 +195,7 @@ public:
 	//! key does not already exist.
 	mapped_type& operator[](const key_type& key)
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, return a reference to the mapped value.
 			return result.first->second;
 
@@ -208,7 +208,7 @@ public:
 	//! such key does not already exist.
 	mapped_type& operator[](key_type&& key)
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, return a reference to the mapped value.
 			return result.first->second;
 
@@ -223,7 +223,7 @@ public:
 	//! if such key exists. Otherwise, throws @c std::out_of_range.
 	mapped_type& at(const key_type& key)
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, return a reference.
 			return result.first->second;
 
@@ -235,7 +235,7 @@ public:
 	//! if such key exists. Otherwise, throws @c std::out_of_range.
 	const mapped_type& at(const key_type& key) const
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, return a reference.
 			return result.first->second;
 
@@ -260,32 +260,33 @@ public:
 	template <class M>
 	std::pair<iterator, bool> insert_or_assign(const key_type& key, M&& obj)
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, assign, return the iterator and false.
 		{
 			(*result.first).second = std::forward<M>(obj);
-			return make_pair(result.first, false);
+			return std::make_pair(result.first, false);
 		}
 
 		// Otherwise, return the emplaced value's iterator and true.
-		return make_pair(data_emplace(result.first, key, std::move(obj)), true);
+		return std::make_pair(data_emplace(result.first, key, std::move(obj)),
+		                      true);
 	}
 
 	//! @c insert_or_assign(key,obj) overload that takes an rvalue key.
 	template <class M>
 	std::pair<iterator, bool> insert_or_assign(key_type&& key, M&& obj)
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, assign, return the iterator and false.
 		{
 			(*result.first).second = std::forward<M>(obj);
-			return make_pair(result.first, false);
+			return std::make_pair(result.first, false);
 		}
 
 		// Otherwise, return the emplaced value's iterator and true.
-		return make_pair(data_emplace(result.first, std::move(key),
-		                              std::move(obj)),
-		                 true);
+		return std::make_pair(data_emplace(result.first, std::move(key),
+		                                   std::move(obj)),
+		                      true);
 	}
 
 	/*!
@@ -296,12 +297,10 @@ public:
 	     - Returns the iterator to the element (just inserted or already there).
 	     - Uses the hint to find the insertion place (see @c emplace_hint).
 	*/
-	template <class... Args>
-	iterator insert_or_assign(const_iterator hint,
-	                          const key_type& key,
-	                          Args&&... obj)
+	template <class M>
+	iterator insert_or_assign(const_iterator hint, const key_type& key, M&& obj)
 	{
-		auto result = find_or_upper_bound_hint(hint, key);
+		auto result = this->find_or_upper_bound_hint(hint, key);
 		if (result.second) // If found, assign, return the iterator.
 		{
 			(*result.first).second = std::forward<M>(obj);
@@ -316,7 +315,7 @@ public:
 	template <class M>
 	iterator insert_or_assign(const_iterator hint, key_type&& key, M&& obj)
 	{
-		auto result = find_or_upper_bound_hint(hint, key);
+		auto result = this->find_or_upper_bound_hint(hint, key);
 		if (result.second) // If found, assign, return the iterator.
 		{
 			(*result.first).second = std::forward<M>(obj);
@@ -339,28 +338,28 @@ public:
 	template <class... Args>
 	std::pair<iterator, bool> try_emplace(const key_type& key, Args&&... args)
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, return the iterator and false.
-			return make_pair(result.first, false);
+			return std::make_pair(result.first, false);
 
 		// Otherwise, return the emplaced value's iterator and true.
-		return make_pair(data_emplace(result.first, key,
-		                              std::forward<Args>(args)...),
-		                 true);
+		return std::make_pair(data_emplace(result.first, key,
+		                                   std::forward<Args>(args)...),
+		                      true);
 	}
 
 	//! @c try_emplace(key,args) overload that takes an rvalue key.
 	template <class... Args>
 	std::pair<iterator, bool> try_emplace(key_type&& key, Args&&... args)
 	{
-		auto result = find_or_upper_bound(key);
+		auto result = this->find_or_upper_bound(key);
 		if (result.second) // If found, return the iterator and false.
-			return make_pair(result.first, false);
+			return std::make_pair(result.first, false);
 
 		// Otherwise, return the emplaced value's iterator and true.
-		return make_pair(data_emplace(result.first, std::move(key),
-		                              std::forward<Args>(args)...),
-		                 true);
+		return std::make_pair(data_emplace(result.first, std::move(key),
+		                                   std::forward<Args>(args)...),
+		                      true);
 	}
 
 	/*!
@@ -374,7 +373,7 @@ public:
 	                     const key_type& key,
 	                     Args&&... args)
 	{
-		auto result = find_or_upper_bound_hint(hint, key);
+		auto result = this->find_or_upper_bound_hint(hint, key);
 		if (result.second) // If found, return the iterator.
 			return result.first;
 
@@ -387,13 +386,42 @@ public:
 	template <class... Args>
 	iterator try_emplace(const_iterator hint, key_type&& key, Args&&... args)
 	{
-		auto result = find_or_upper_bound_hint(hint, key);
+		auto result = this->find_or_upper_bound_hint(hint, key);
 		if (result.second) // If found, return the iterator.
 			return result.first;
 
 		// Otherwise, return the emplaced value's iterator.
 		return data_emplace(result.first, std::move(key),
 		                    std::forward<Args>(args)...);
+	}
+
+	//! Erases all elements matching the key (at most 1 in a map/set).
+	//! Returns the erased element count.
+	size_type erase(const key_type& key)
+	{
+		return MyBase::erase(key);
+	}
+
+	//! Erases the element at @c position.
+	//! Returns the iterator following the removed element.
+	iterator erase(const_iterator position)
+	{
+		return MyBase::erase(position, size_t());
+	}
+
+	//! @c erase(pos) - fix for an ambiguity.
+	//! See: http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-defects.html#2059
+	//! http://lists.llvm.org/pipermail/cfe-commits/Week-of-Mon-20150427/128182.html
+	iterator erase(iterator position)
+	{
+		return MyBase::erase(position, size_t());
+	}
+
+	//! Erases the elements in the range [first,last).
+	//! Returns the iterator following the last removed element.
+	iterator erase(const_iterator first, const_iterator last)
+	{
+		return MyBase::erase(first, last);
 	}
 
 	/// @}
@@ -403,7 +431,7 @@ public:
 	//! Returns a copy of the key comparator.
 	key_compare key_comp() const
 	{
-		return comparator.key_comp();
+		return this->comparator.key_comp();
 	}
 
 	/// @}
@@ -415,147 +443,121 @@ protected:
 	                      const key_type& key,
 	                      Args&&... args)
 	{
-		return data.emplace(pos, std::piecewise_construct,
-		                    std::forward_as_tuple(key),
-		                    std::forward_as_tuple(std::forward<Args>(args)...));
+		return iterator(
+		    this->data
+		        .emplace(static_cast<
+		                     typename impl_container_type::const_iterator>(pos),
+		                 std::piecewise_construct, std::forward_as_tuple(key),
+		                 std::forward_as_tuple(std::forward<Args>(args)...)));
 	}
 
 	//! Emplace an element before @c pos and return its @c iterator.
 	template <class... Args>
 	iterator data_emplace(const_iterator pos, key_type&& key, Args&&... args)
 	{
-		return data.emplace(pos, std::piecewise_construct,
-		                    std::forward_as_tuple(std::move(key)),
-		                    std::forward_as_tuple(std::forward<Args>(args)...));
+		return iterator(
+		    this->data
+		        .emplace(static_cast<
+		                     typename impl_container_type::const_iterator>(pos),
+		                 std::piecewise_construct,
+		                 std::forward_as_tuple(std::move(key)),
+		                 std::forward_as_tuple(std::forward<Args>(args)...)));
 	}
 
 	// friend operators
 
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator==(const map<Key, T, Compare, Alloc, Container>&,
-	                       const map<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator!=(const map<Key, T, Compare, Alloc, Container>&,
-	                       const map<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator<(const map<Key, T, Compare, Alloc, Container>&,
-	                      const map<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator<=(const map<Key, T, Compare, Alloc, Container>&,
-	                       const map<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator>(const map<Key, T, Compare, Alloc, Container>&,
-	                      const map<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator>=(const map<Key, T, Compare, Alloc, Container>&,
-	                       const map<Key, T, Compare, Alloc, Container>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator==(const map<K, M, P, A, C>&,
+	                       const map<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator!=(const map<K, M, P, A, C>&,
+	                       const map<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator<(const map<K, M, P, A, C>&, const map<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator<=(const map<K, M, P, A, C>&,
+	                       const map<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator>(const map<K, M, P, A, C>&, const map<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator>=(const map<K, M, P, A, C>&,
+	                       const map<K, M, P, A, C>&);
 };
 
 //! equality
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-bool operator==(const map<Key, T, Compare, Alloc, Container>& lhs,
-                const map<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+bool operator==(const map<K, M, P, A, C>& lhs, const map<K, M, P, A, C>& rhs)
 {
 	return lhs.data == rhs.data;
 }
 
 //! inequality
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-bool operator!=(const map<Key, T, Compare, Alloc, Container>& lhs,
-                const map<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+bool operator!=(const map<K, M, P, A, C>& lhs, const map<K, M, P, A, C>& rhs)
 {
 	return lhs.data != rhs.data;
 }
 
 //! less than
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator<(const map<Key, T, Compare, Alloc, Container>& lhs,
-                      const map<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator<(const map<K, M, P, A, C>& lhs,
+                      const map<K, M, P, A, C>& rhs)
 {
 	return lhs.data < rhs.data;
 }
 
 //! less or equal to
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator<=(const map<Key, T, Compare, Alloc, Container>& lhs,
-                       const map<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator<=(const map<K, M, P, A, C>& lhs,
+                       const map<K, M, P, A, C>& rhs)
 {
 	return lhs.data <= rhs.data;
 }
 
 //! greater than
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator>(const map<Key, T, Compare, Alloc, Container>& lhs,
-                      const map<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator>(const map<K, M, P, A, C>& lhs,
+                      const map<K, M, P, A, C>& rhs)
 {
 	return lhs.data > rhs.data;
 }
 
 //! greater or equal to
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator>=(const map<Key, T, Compare, Alloc, Container>& lhs,
-                       const map<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator>=(const map<K, M, P, A, C>& lhs,
+                       const map<K, M, P, A, C>& rhs)
 {
 	return lhs.data >= rhs.data;
 }
 
 //! swap
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline void swap(map<Key, T, Compare, Alloc, Container>& lhs,
-                 map<Key, T, Compare, Alloc, Container>&
-                     rhs) noexcept(noexcept(lhs.swap(rhs)))
+template <class K, class M, class P, class A, template <class, class> class C>
+inline void swap(map<K, M, P, A, C>& lhs,
+                 map<K, M, P, A, C>& rhs) noexcept(noexcept(lhs.swap(rhs)))
 {
 	lhs.swap(rhs);
 }

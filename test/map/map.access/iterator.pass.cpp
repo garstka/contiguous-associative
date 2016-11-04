@@ -209,7 +209,7 @@ TEST_CASE("map access iterator pass")
         }
     }
 #endif
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     { // N3644 testing
         typedef contiguous::map<int, double> C;
         C::iterator ii1{}, ii2{};

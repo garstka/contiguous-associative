@@ -96,6 +96,7 @@ struct some_alloc3
 
 TEST_CASE("set special swap noexcept pass")
 {
+#ifndef SET_SWAP_NOEXCEPT_SPECS_DIFFERENT_TO_STD
     {
         typedef contiguous::set<MoveOnly> C;
         static_assert(noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
@@ -135,6 +136,7 @@ TEST_CASE("set special swap noexcept pass")
     typedef contiguous::set<MoveOnly, some_comp2<MoveOnly>, some_alloc3<MoveOnly>> C;
     LIBCPP_STATIC_ASSERT( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
     }
+#endif
 #endif
 
 }

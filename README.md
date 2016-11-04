@@ -1,71 +1,52 @@
 
 # contiguous-associative
 
-C++14 [multi]{set,map} interface on a sorted vector.
+C++14 [multi]{map,set} interface on a sorted vector.
 
-## Differences to std::[multi]{set,map}
-- The template parameter Container is the underlying container, which must be
- compatible with std::vector.
-- Iterators are random-access, and iterator invalidation rules are inherited
- from the underlying container.
-- The container swap is noexcept if Container::swap is noexcept with the
- provided allocator, and ADL swap for Compare objects is noexcept.
-- Insertion/erasure of a single element is log2(n) + average n/2 (worst case n).
-- Insertion of a range of k elements sorts input (klogk) and performs a merge
- (linear in n+k).
-- The container has additional requirements, stemming from the fact that
- a vector is a contiguous container.
- 
+## Main differences to std::[multi]{map,set}
+- Additional parameter - the underlying container compatible with std::vector.
+- Random-access iterators, invalidation rules inherited from vector.
+- Insert/erase of a single element is log2(n) + average n/2 (worst case n).
+- Insert range of k elements sorts input (klogk) and performs a merge (n+k).
+- Different noexcept specifications (inherited from vector).
+- Additional requirements
+   - [multi]map: const Key and T must be move-constructible.
+   - [multi]set: most ops need Key to be move-assignable (same as vector).
+
 ## Relation to boost::flat_[multi]{map,set} and Loki::AssocVector
- Boost and Loki implement similar containers. Here are the major differences:
- - contiguous::[multi]{map,set} containers support the operations introduced in C++14.
- - By default, the value_type for [multi]map is std::pair\<const Key,T\> for
-  compatibility with std::[multi]map, as opposed to Boost's and Loki's
-  std::pair\<Key,T\>. This behavior can be easily altered by flipping a flag in
-  contiguous_settings.h.
+ Boost and Loki implement similar containers. The major differences are:
+ - contiguous::map supports operations introduced in C++14 (insert_or_assign, try_emplace).
+ - contiguous::[multi]map keeps the immutable key in the value_type: `std::pair<const Key,T>`.
+ Boost and Loki use `std::pair<Key,T>`.
  
-## Requirements
- The requirements depend on the operations performed, but:
+## Basic map/multimap requirement
 
- - the requirements for a [multi]set are mostly the same as
-  for a Container\<Key\>. Also, range/initializer list insertion requires
-  value_type to be MoveAssignable.
- - [multi]map needs to store a std::pair\<const Key,T\> (by default).
-  The const-qualified key makes the pair non-assignable. To mitigate this,
-  a wrapper is used that requires the following to be true:
-
-```  
+```
 std::is_move_constructible<const Key>::value &&  
 std::is_move_constructible<T>::value
 ```
 
  The first expression means that Key must have a copy constructor or
- a Key(const Key&&). Same goes for T, however if it's not const-qualified,
- it can also have a regular move constructor.
-
- If the boost-like value_type is used (std::pair\<Key,T\>), the requirements are
- less strict:
-
-```  
-std::is_move_constructible<Key>::value &&  
-std::is_move_constructible<T>::value
-```
-
-## Additional notes
- - Using a wrapper means that the general container requirement 23.2.1.3 is violated.
- (Allocator::construct and Allocator::destruct must be used only with value_type).
- There's no easy way around it, as it's the underlying container that handles those calls,
- and its value_type is the wrapper.
- - The iterator wrappers for [multi]map are SCARY if the Container iterators
- are SCARY (they depend on the Container iterators, [multi]map::pointer
- and [multi]map::value_type).
- - The implementation is based on the working draft n4296 of the C++ Standard.
+ a `Key(const Key&&)`. Same goes for T, however if it's not const-qualified,
+ a regular move constructor will work best.
 
 ## Unit tests
- - The containers were tested using modified libc++ unit tests on Windows (Visual Studio 14).
- At some point, I will refactor the code to work with GCC/Linux.
- - You can build and run the tests using CMake. The framework i Catch, so running the
-  Test executable provides the best results, but ctest also works.
+ - Containers were tested using customized libc++ unit tests on Windows (Visual Studio 14)
+ and Linux (GCC 6.2.0).
+ - You can build and run the tests using CMake. The framework is Catch, so running the
+  Test executable provides the best results, but ctest (make test) also works.
+ - `defs.h` contains macros commenting out irrelevant or incompatible parts of code from
+ the original tests, each with a short justification.
+ - `fail_defs.h` lists macros that enable tests with deliberate compile-time errors.
+ 
+## Additional implementation notes
+ - The implementation is based on the working draft n4296 of the C++ Standard.
+ - Using a wrapper means that general container requirement 23.2.1.3 is violated.
+ (`Allocator::construct` and `Allocator::destruct` must be used only with value_type).
+ There's no easy way around this, as far as I'm aware, as it's the underlying
+  container that handles those calls, and its value_type is the wrapper.
+ - Iterators for [multi]map are SCARY if Container iterators
+ are SCARY (i.e. they depend only on Container iterators, pointer and value_type).
 
 ## License and feedback
 

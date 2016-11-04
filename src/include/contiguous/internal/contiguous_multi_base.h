@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-
 #include "contiguous_base.h"
 
 /**
@@ -9,7 +7,6 @@
     @brief Common functionality of associative containers that support
    equivalent keys - @c contiguous_multimap and @c contiguous_multiset.
 */
-
 
 namespace contiguous
 {
@@ -167,7 +164,7 @@ public:
 
 	//! Move-assigns other.
 	contiguous_multi_base& operator=(contiguous_multi_base&& other) noexcept(
-	    noexcept(MyBase::operator=(std::move(other))))
+	    noexcept(other.MyBase::operator=(std::move(other))))
 	{
 		MyBase::operator=(std::move(other));
 		return *this;
@@ -178,7 +175,7 @@ public:
 	//! Replaces the elements with the elements from the initializer list.
 	contiguous_multi_base& operator=(std::initializer_list<value_type> il)
 	{
-		clear();
+		this->clear();
 		insert(il.begin(), il.end());
 		return *this;
 	}
@@ -246,32 +243,34 @@ public:
 
 
 	//! Inserts the elements in the range @c [first,last). Requires value_type
-	//! to be MoveAssignable.
+	//! to be MoveAssignable, if the container is a multiset.
 	template <class InputIterator>
 	void insert(InputIterator in_first, InputIterator in_last)
 	{
-		// Check the std::stable_sort requirement.
-		static_assert(std::is_move_assignable<value_type>::value,
-		              "value_type must be MoveAssignable to perform range "
+		// Check the std::stable_sort requirement for multiset.
+		// Multimap pair wrapper is move-assignable by design.
+		static_assert(std::is_move_assignable<impl_value_type>::value,
+		              "multiset: value_type must be MoveAssignable to perform "
+		              "range "
 		              "insertion");
 
 		// Save the number of elements before the insertion.
-		auto data_initial_size = data.size();
+		auto data_initial_size = this->data.size();
 
 		// Insert all the elements at the back.
-		data.insert(data.end(), in_first, in_last);
+		this->data.insert(this->data.end(), in_first, in_last);
 
-		auto first = data.begin();
+		auto first = this->data.begin();
 		auto middle = first + data_initial_size;
-		auto last = data.end();
+		auto last = this->data.end();
 
 		// If the inserted range isn't sorted, stable sort it to preserve
 		// equivalent element order.
-		if (!std::is_sorted(middle, last, comparator))
-			std::stable_sort(middle, last, comparator);
+		if (!std::is_sorted(middle, last, this->comparator))
+			std::stable_sort(middle, last, this->comparator);
 
 		// Merge the two ranges
-		std::inplace_merge(first, middle, last, comparator);
+		std::inplace_merge(first, middle, last, this->comparator);
 	}
 
 	// initializer list
@@ -285,29 +284,24 @@ public:
 	}
 
 
-	//! Erases all elements matching the key (at most 1 in a map/set).
+	//! Erases all elements matching the key.
 	//! Returns the erased element count.
 	size_type erase(const key_type& key)
 	{
 		auto range = equal_range(key);
 		auto count = std::distance(range.first, range.second);
-		data.erase(range.first, range.second);
+		this->data
+		    .erase(static_cast<typename impl_container_type::const_iterator>(
+		               range.first),
+		           static_cast<typename impl_container_type::const_iterator>(
+		               range.second));
 		return count;
 	}
 
-
 	//! Erases the element at @c position.
 	//! Returns the iterator following the removed element.
-	iterator erase(const_iterator position)
-	{
-		return MyBase::erase(position);
-	}
-
-	//! @c erase(pos) - fix for an ambiguity.
-	//! See: http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-defects.html#2059
-	template <class = std::enable_if_t<
-	              !std::is_same<iterator, const_iterator>::value>>
-	iterator erase(iterator position)
+	//! Tag used to disambiguate (see multimap).
+	iterator erase(const_iterator position, size_t)
 	{
 		return MyBase::erase(position);
 	}
@@ -319,7 +313,6 @@ public:
 		return MyBase::erase(first, last);
 	}
 
-
 	//! Inserts the element at the upper bound by constructing it in-place with
 	//! the given @c args.
 	//! Returns an iterator to the inserted element.
@@ -327,18 +320,20 @@ public:
 	iterator emplace(Args&&... args)
 	{
 		// Emplace at the back.
-		data.emplace_back(std::forward<Args>(args)...);
+		this->data.emplace_back(std::forward<Args>(args)...);
 
 		// Get the upper bound to position.
-		auto pos =
-		    std::upper_bound(begin(), end() - 1, data.back(), comparator);
+		auto pos = std::upper_bound(this->begin(), this->end() - 1,
+		                            this->data.back(), this->comparator);
 
 		// Rotate the emplaced element to its proper place.
 		// Important: rotating using the vector iterator, not
 		// contiguous_multi_base::iterator, which may be a wrapper that, when
 		// dereferenced, returns a reference to a non-move-assignable type.
-		std::rotate<decltype(data.end())>(data.begin() + (pos - begin()),
-		                                  data.end() - 1, data.end());
+		std::rotate<decltype(this->data.end())>(this->data.begin() +
+		                                            (pos - this->begin()),
+		                                        this->data.end() - 1,
+		                                        this->data.end());
 
 		// Return an iterator the emplaced element.
 		return pos;
@@ -354,21 +349,24 @@ public:
 	iterator emplace_hint(const_iterator hint, Args&&... args)
 	{
 		// Save the hint in case the iterators are invalidated.
-		auto hint_offset = hint - begin();
+		auto hint_offset = hint - this->begin();
 
 		// Emplace at the back.
-		data.emplace_back(std::forward<Args>(args)...);
+		this->data.emplace_back(std::forward<Args>(args)...);
 
 		// Get the insertion position.
-		auto pos = get_insert_position_hint(begin(), end() - 1,
-		                                    begin() + hint_offset, data.back());
+		auto pos = get_insert_position_hint(this->begin(), this->end() - 1,
+		                                    this->begin() + hint_offset,
+		                                    this->data.back());
 
 		// Rotate the emplaced element to its proper place.
 		// Important: rotating using the vector iterator, not
 		// contiguous_multi_base::iterator, which may be a wrapper that, when
 		// dereferenced, returns a reference to a non-move-assignable type.
-		std::rotate<decltype(data.end())>(data.begin() + (pos - begin()),
-		                                  data.end() - 1, data.end());
+		std::rotate<decltype(this->data.end())>(this->data.begin() +
+		                                            (pos - this->begin()),
+		                                        this->data.end() - 1,
+		                                        this->data.end());
 
 		// Return an iterator the emplaced element.
 		return pos;
@@ -382,11 +380,11 @@ public:
 	//! If such element was not found, end() is returned.
 	iterator find(const key_type& key)
 	{
-		auto lbound = lower_bound(key);
+		auto lbound = this->lower_bound(key);
 
 		// If not found, or only found upper bound (i.e. val != lbound).
-		if (lbound == end() || comparator(key, *lbound))
-			return end();
+		if (lbound == this->end() || this->comparator(key, *lbound))
+			return this->end();
 
 		return lbound; // found
 	}
@@ -394,11 +392,11 @@ public:
 	//! Const overload of @c find(key).
 	const_iterator find(const key_type& key) const
 	{
-		auto lbound = lower_bound(key);
+		auto lbound = this->lower_bound(key);
 
 		// If not found, or only found upper bound (i.e. val != lbound).
-		if (lbound == end() || comparator(key, *lbound))
-			return end();
+		if (lbound == this->end() || this->comparator(key, *lbound))
+			return this->end();
 
 		return lbound; // found
 	}
@@ -408,27 +406,31 @@ public:
 	//! If such element was not found, end() is returned.
 	//! Only participates in overload resolution,
 	//! if key_compare::is_transparent is valid and denotes a type.
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	iterator find(const K& x)
 	{
-		auto lbound = lower_bound(x);
+		auto lbound = this->lower_bound(x);
 
 		// If not found, or only found upper bound (i.e. val != lbound).
-		if (lbound == end() || comparator(x, *lbound))
-			return end();
+		if (lbound == this->end() || this->comparator(x, *lbound))
+			return this->end();
 
 		return lbound; // found
 	}
 
 	//! Const overload of @c find(x).
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	const_iterator find(const K& x) const
 	{
-		auto lbound = lower_bound(x);
+		auto lbound = this->lower_bound(x);
 
 		// If not found, or only found upper bound (i.e. val != lbound).
-		if (lbound == end() || comparator(x, *lbound))
-			return end();
+		if (lbound == this->end() || this->comparator(x, *lbound))
+			return this->end();
 
 		return lbound; // found
 	}
@@ -445,7 +447,9 @@ public:
 	//! value @c x.
 	//! Only participates in overload resolution,
 	//! if key_compare::is_transparent is valid and denotes a type.
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	size_type count(const K& x) const
 	{
 		auto range = equal_range(x);
@@ -456,31 +460,39 @@ public:
 	//! key.
 	std::pair<iterator, iterator> equal_range(const key_type& key)
 	{
-		return std::equal_range(begin(), end(), key, comparator);
+		return std::equal_range(this->begin(), this->end(), key,
+		                        this->comparator);
 	}
 
 	//! Const overload of @c equal_range(key).
 	std::pair<const_iterator, const_iterator> equal_range(
 	    const key_type& key) const
 	{
-		return std::equal_range(cbegin(), cend(), key, comparator);
+		return std::equal_range(this->cbegin(), this->cend(), key,
+		                        this->comparator);
 	}
 
 	//! Returns the pair (lower bound, upper bound).
 	//! Compares the keys to the value @c x.
 	//! Only participates in overload resolution,
 	//! if key_compare::is_transparent is valid and denotes a type.
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	std::pair<iterator, iterator> equal_range(const K& x)
 	{
-		return std::equal_range(begin(), end(), x, comparator);
+		return std::equal_range(this->begin(), this->end(), x,
+		                        this->comparator);
 	}
 
 	//! Const overload of @c equal_range(x).
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	std::pair<const_iterator, const_iterator> equal_range(const K& x) const
 	{
-		return std::equal_range(cbegin(), cend(), x, comparator);
+		return std::equal_range(this->cbegin(), this->cend(), x,
+		                        this->comparator);
 	}
 
 	/// @}
@@ -502,41 +514,41 @@ protected:
 		if (hint == end)
 		{
 			// empty || last <= key
-			if (end - begin == 0 || !comparator(v, *(end - 1)))
+			if (end - begin == 0 || !this->comparator(v, *(end - 1)))
 				return hint; // end() is the correct insertion place (the upper
 			                 // bound)
 
 			// else: key < last [end], so the hint was wrong, find upper_bound
 			// to insert
 			// as close to the end as possible
-			return std::upper_bound(begin, end, v, comparator);
+			return std::upper_bound(begin, end, v, this->comparator);
 		}
 		else if (hint == begin)
 		{
-			if (!comparator(*hint, v)) // key <= begin
+			if (!this->comparator(*hint, v)) // key <= begin
 				return hint; // begin() is the correct insertion place (the
 			                 // upper bound)
 
 			// else: [begin] begin < key, so the hint was wrong, find
 			// lower_bound to insert
 			// as close to the beginning as possible
-			return std::lower_bound(begin, end, v, comparator);
+			return std::lower_bound(begin, end, v, this->comparator);
 		}
-		else if (!comparator(*hint, v)) // key <= hint
+		else if (!this->comparator(*hint, v)) // key <= hint
 		{
-			if (!comparator(v, *(hint - 1))) // previous <= key <= hint
+			if (!this->comparator(v, *(hint - 1))) // previous <= key <= hint
 				return hint; // hint is the correct insertion place (just prior
 			                 // to hint, and ordering is preserved)
 
 			// else: key < previous < hint, so the hint was wrong, find
 			// upper_bound to insert
 			// as close to hint as possible
-			return std::upper_bound(begin, end, v, comparator);
+			return std::upper_bound(begin, end, v, this->comparator);
 		}
 
 		// else: hint < key, so the hint was wrong, find lower_bound to insert
 		// as close to hint as possible
-		return std::lower_bound(begin, end, v, comparator);
+		return std::lower_bound(begin, end, v, this->comparator);
 	}
 };
 }

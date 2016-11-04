@@ -9,9 +9,11 @@
 
 #ifndef TRANSPARENT_H
 #define TRANSPARENT_H
+#include <utility>
 
+#include "defs.h"
 // testing transparent
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
 
 struct transparent_less
 {

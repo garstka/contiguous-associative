@@ -95,7 +95,7 @@ TEST_CASE("set count pass")
         REQUIRE(r == 0);
     }
 #endif
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
         typedef int V;
         typedef contiguous::set<int, std::less<>> M;

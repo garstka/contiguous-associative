@@ -29,7 +29,7 @@
 
 TEST_CASE("map ops lower bound2 fail")
 {
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
 #ifdef MAP_LBOUND_FAIL2
     {
     typedef contiguous::map<int, double, transparent_less_private> M;

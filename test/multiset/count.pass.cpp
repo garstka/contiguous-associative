@@ -93,7 +93,7 @@ TEST_CASE("multiset count pass")
     }
     }
 #endif
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef int V;
     typedef contiguous::multiset<int, std::less<>> M;

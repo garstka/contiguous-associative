@@ -20,7 +20,9 @@
 class MoveOnly
 {
     friend class MoveOnly2;
+#ifndef MOVE_ONLY_GCC_FIX
     MoveOnly(const MoveOnly&);
+#endif
     MoveOnly& operator=(const MoveOnly&);
 
     int data_;

@@ -197,7 +197,7 @@ TEST_CASE("multiset iterator pass")
                 REQUIRE(*i == j);
     }
 #endif
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     { // N3644 testing
         typedef contiguous::multiset<int> C;
         C::iterator ii1{}, ii2{};

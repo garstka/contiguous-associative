@@ -96,6 +96,7 @@ struct some_alloc3
 
 TEST_CASE("map special swap noexcept pass")
 {
+#ifndef MAP_SWAP_NOEXCEPT_SPECS_DIFFERENT_TO_STD
     typedef std::pair<const MoveOnly, MoveOnly> V;
     {
         typedef contiguous::map<MoveOnly, MoveOnly> C;
@@ -137,5 +138,5 @@ TEST_CASE("map special swap noexcept pass")
     LIBCPP_STATIC_ASSERT( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
     }
 #endif
-
+#endif
 }

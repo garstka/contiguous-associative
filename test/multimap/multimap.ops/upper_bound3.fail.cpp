@@ -29,7 +29,7 @@
 
 TEST_CASE("multimap upper bound3 fail")
 {
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
 #ifdef MULTIMAP_UBOUND_FAIL
     {
     typedef contiguous::multimap<int, double, transparent_less_not_a_type> M;

@@ -42,7 +42,7 @@ TEST_CASE("set cons initializer list compare alloc pass")
     REQUIRE(m.key_comp() == Cmp(10));
     REQUIRE(m.get_allocator() == A(4));
     }
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef test_compare<std::less<int> > Cmp;
     typedef test_allocator<int> A;

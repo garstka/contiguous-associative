@@ -13,47 +13,20 @@
 
 #include <ciso646> // Get STL specific macros like _LIBCPP_VERSION
 
+#include "defs.h"
+
 #define TEST_CONCAT1(X, Y) X##Y
 #define TEST_CONCAT(X, Y) TEST_CONCAT1(X, Y)
 
-#ifdef __has_feature
-#define TEST_HAS_FEATURE(X) __has_feature(X)
-#else
 #define TEST_HAS_FEATURE(X) 0
-#endif
 
-#ifdef __has_include
-#define TEST_HAS_INCLUDE(X) __has_include(X)
-#else
 #define TEST_HAS_INCLUDE(X) 0
-#endif
 
-#ifdef __has_extension
-#define TEST_HAS_EXTENSION(X) __has_extension(X)
-#else
 #define TEST_HAS_EXTENSION(X) 0
-#endif
 
-#ifdef __has_builtin
-#define TEST_HAS_BUILTIN(X) __has_builtin(X)
-#else
 #define TEST_HAS_BUILTIN(X) 0
-#endif
-#ifdef __is_identifier
-// '__is_identifier' returns '0' if '__x' is a reserved identifier provided by
-// the compiler and '1' otherwise.
-#define TEST_HAS_BUILTIN_IDENTIFIER(X) !__is_identifier(X)
-#else
-#define TEST_HAS_BUILTIN_IDENTIFIER(X) 0
-#endif
 
-#if defined(__apple_build_version__)
-#define TEST_APPLE_CLANG_VER (__clang_major__ * 100) + __clang_minor__
-#elif defined(__clang_major__)
-#define TEST_CLANG_VER (__clang_major__ * 100) + __clang_minor__
-#elif defined(__GNUC__)
-#define TEST_GCC_VER (__GNUC__ * 100 + __GNUC_MINOR__)
-#endif
+#define TEST_HAS_BUILTIN_IDENTIFIER(X) 0
 
 /* Make a nice name for the standard version */
 #ifndef TEST_STD_VER
@@ -66,13 +39,6 @@
 #else
 # define TEST_STD_VER 16    // current year; greater than current standard
 #endif
-#endif
-
-// Attempt to deduce GCC version
-#if defined(_LIBCPP_VERSION) && TEST_HAS_INCLUDE(<features.h>)
-#include <features.h>
-#define TEST_HAS_GLIBC
-#define TEST_GLIBC_PREREQ(major, minor) __GLIBC_PREREQ(major, minor)
 #endif
 
 /* Features that were introduced in C++14 */
@@ -129,15 +95,9 @@
 #endif
 
 /* Macros for testing libc++ specific behavior and extensions */
-#if defined(_LIBCPP_VERSION)
-#define LIBCPP_ASSERT(...) assert(__VA_ARGS__)
-#define LIBCPP_STATIC_ASSERT(...) static_assert(__VA_ARGS__)
-#define LIBCPP_ONLY(...) __VA_ARGS__
-#else
 #define LIBCPP_ASSERT(...) ((void)0)
 #define LIBCPP_STATIC_ASSERT(...) ((void)0)
 #define LIBCPP_ONLY(...) ((void)0)
-#endif
 
 #define ASSERT_NOEXCEPT(...) \
     static_assert(noexcept(__VA_ARGS__), "Operation must be noexcept")

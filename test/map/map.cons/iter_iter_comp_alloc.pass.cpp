@@ -77,7 +77,7 @@ TEST_CASE("map cons iter iter comp alloc pass")
     REQUIRE(*next(m.begin()) == V(2, 1));
     REQUIRE(*next(m.begin(), 2) == V(3, 1));
     }
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef std::pair<const int, double> V;
     V ar[] =

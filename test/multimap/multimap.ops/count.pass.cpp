@@ -94,7 +94,7 @@ TEST_CASE("multimap ops count pass")
     }
 #endif
 
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef contiguous::multimap<int, double, std::less<>> M;
     typedef M::size_type R;

@@ -30,7 +30,7 @@
 
 TEST_CASE("multimap lower bound0 pass")
 {
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     typedef contiguous::multimap<int, double, transparent_less> M;
 
     M().lower_bound(C2Int{5});

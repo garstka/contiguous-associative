@@ -59,7 +59,7 @@ TEST_CASE("multiset cons iter iter alloc pass")
     REQUIRE(*next(m.begin(), 7) == 3);
     REQUIRE(*next(m.begin(), 8) == 3);
     }
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef int V;
     V ar[] =

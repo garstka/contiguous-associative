@@ -53,7 +53,7 @@ TEST_CASE("multiset cons initializer list pass")
     REQUIRE(*++i == V(5));
     REQUIRE(*++i == V(6));
     }
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef contiguous::multiset<int, std::less<int>, min_allocator<int>> C;
     typedef C::value_type V;

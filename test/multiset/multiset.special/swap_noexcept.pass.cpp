@@ -94,6 +94,7 @@ struct some_alloc3
 
 TEST_CASE("multiset swap noexcept")
 {
+#ifndef MULTISET_SWAP_NOEXCEPT_SPECS_DIFFERENT_TO_STD
     {
         typedef contiguous::multiset<MoveOnly> C;
         static_assert(noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
@@ -133,5 +134,6 @@ TEST_CASE("multiset swap noexcept")
     typedef contiguous::multiset<MoveOnly, some_comp2<MoveOnly>, some_alloc3<MoveOnly>> C;
     LIBCPP_STATIC_ASSERT( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
     }
+#endif
 #endif
 }

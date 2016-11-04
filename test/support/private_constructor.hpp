@@ -11,6 +11,7 @@
 #define __PRIVATE_CONSTRUCTOR__H
 
 #include <iostream>
+#include "defs.h"
 
 struct PrivateConstructor {
 

@@ -12,6 +12,7 @@
 
 #include <cassert>
 
+#include "defs.h"
 class DefaultOnly
 {
     int data_;

@@ -5,6 +5,7 @@
 #include <contiguous/multimap.h>
 #include <contiguous/multiset.h>
 #include <contiguous/set.h>
+#include <map>
 
 // Extremely basic example, shows the container behavior with unique vs
 // equivalent keys.

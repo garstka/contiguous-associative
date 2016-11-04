@@ -96,6 +96,7 @@ struct some_alloc3
 
 TEST_CASE("multimap special swap noexcept pass")
 {
+#ifndef MULIMAP_SWAP_NOEXCEPT_SPECS_DIFFERENT_TO_STD
     typedef std::pair<const MoveOnly, MoveOnly> V;
     {
         typedef contiguous::multimap<MoveOnly, MoveOnly> C;
@@ -136,5 +137,6 @@ TEST_CASE("multimap special swap noexcept pass")
     typedef contiguous::multimap<MoveOnly, MoveOnly, some_comp2<MoveOnly>, some_alloc3<V>> C;
     LIBCPP_STATIC_ASSERT( noexcept(swap(std::declval<C&>(), std::declval<C&>())), "");
     }
+#endif
 #endif
 }

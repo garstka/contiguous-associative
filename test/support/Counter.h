@@ -11,6 +11,7 @@
 #define COUNTER_H
 
 #include <functional> // for std::hash
+#include "defs.h"
 
 struct Counter_base { static int gConstructed; };
 

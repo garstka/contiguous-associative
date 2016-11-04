@@ -78,7 +78,7 @@ TEST_CASE("multimap cons iter iter pass")
     REQUIRE(*next(m.begin(), 7) == V(3, 1.5));
     REQUIRE(*next(m.begin(), 8) == V(3, 2));
     }
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef std::pair<const int, double> V;
     V ar[] =

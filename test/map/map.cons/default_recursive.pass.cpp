@@ -15,6 +15,7 @@
 
 #include "defs.h"
 
+#ifndef MAP_REQUIRE_COMPLETE_TYPE
 #include "catch.hpp"
 #include "contiguous/map.h"
 
@@ -30,3 +31,4 @@ struct X
 TEST_CASE("map cons default recursive pass")
 {
 }
+#endif

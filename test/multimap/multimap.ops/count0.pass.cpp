@@ -30,7 +30,7 @@
 
 TEST_CASE("multimap ops count0 pass")
 {
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     typedef contiguous::multimap<int, double, transparent_less> M;
 
     M().count(C2Int{5});

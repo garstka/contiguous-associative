@@ -28,6 +28,13 @@
 template <class Container, class Pair>
 void do_insert_rv_test()
 {
+	using S = contiguous::internal::wrapped_pair<const int, MoveOnly>;
+	using D = contiguous::internal::wrapped_pair<const int, MoveOnly,true>;
+	const auto asd = std::is_copy_constructible<std::pair<const int, MoveOnly>>::value;
+
+		//T y;
+		//x.get();
+
     typedef Container M;
     typedef Pair P;
     typedef typename M::iterator R;

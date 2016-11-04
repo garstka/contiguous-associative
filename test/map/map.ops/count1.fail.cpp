@@ -29,7 +29,7 @@
 
 TEST_CASE("map ops count1 fail")
 {
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
 #ifdef MAP_COUNT1_FAIL
     {
     typedef contiguous::map<int, double, transparent_less_no_type> M;

@@ -14,6 +14,8 @@
 // multimap();
 
 #include "defs.h"
+
+#ifndef MULTIMAP_REQUIRE_COMPLETE_TYPE
 #include "catch.hpp"
 
 #include "contiguous/multimap.h"
@@ -30,3 +32,4 @@ struct X
 TEST_CASE("multimap cons default recursive pass")
 {
 }
+#endif

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "contiguous_multi_base.h"
+#include "internal/contiguous_multi_base.h"
 
 /**
     @file multiset.h
@@ -26,12 +26,14 @@ template <class Key,
           class Alloc = std::allocator<Key>,
           template <class V, class A> class Container = std::vector>
 class multiset : public contiguous_multi_base<
-                     internal::set_traits<Key, Compare, Container<Key, Alloc>>>
+                     internal::set_traits<Key, Compare, Alloc, Container>>
 {
 private:
 	// the base class, same as above
 	using MyBase = contiguous_multi_base<
-	    internal::set_traits<Key, Compare, Container<Key, Alloc>>>;
+	    internal::set_traits<Key, Compare, Alloc, Container>>;
+
+	using typename MyBase::impl_container_type;
 
 public:
 	//! @name types
@@ -166,7 +168,7 @@ public:
 
 	//! Move-assigns other.
 	multiset& operator=(multiset&& other) noexcept(
-	    noexcept(MyBase::operator=(std::move(other))))
+	    noexcept(other.MyBase::operator=(std::move(other))))
 	{
 		MyBase::operator=(std::move(other));
 		return *this;
@@ -182,131 +184,116 @@ public:
 	}
 
 	/// @}
+	//! @name modifiers
+	/// @{
+
+	//! Erases all elements matching the key.
+	//! Returns the erased element count.
+	size_type erase(const key_type& key)
+	{
+		return MyBase::erase(key);
+	}
+
+	//! Erases the element at @c position.
+	//! Returns the iterator following the removed element.
+	iterator erase(const_iterator position)
+	{
+		return MyBase::erase(position, size_t());
+	}
+
+	//! Erases the elements in the range [first,last).
+	//! Returns the iterator following the last removed element.
+	iterator erase(const_iterator first, const_iterator last)
+	{
+		return MyBase::erase(first, last);
+	}
+
+	/// @}
 	//! @name observers
 	/// @{
 
 	//! Returns a copy of the key comparator.
 	key_compare key_comp() const
 	{
-		return comparator;
+		return this->comparator;
 	}
 
 	/// @}
 
 	// friend operators
 
-	template <class Key,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator==(const multiset<Key, Compare, Alloc, Container>&,
-	                       const multiset<Key, Compare, Alloc, Container>&);
-	template <class Key,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator!=(const multiset<Key, Compare, Alloc, Container>&,
-	                       const multiset<Key, Compare, Alloc, Container>&);
-	template <class Key,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator<(const multiset<Key, Compare, Alloc, Container>&,
-	                      const multiset<Key, Compare, Alloc, Container>&);
-	template <class Key,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator<=(const multiset<Key, Compare, Alloc, Container>&,
-	                       const multiset<Key, Compare, Alloc, Container>&);
-	template <class Key,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator>(const multiset<Key, Compare, Alloc, Container>&,
-	                      const multiset<Key, Compare, Alloc, Container>&);
-	template <class Key,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator>=(const multiset<Key, Compare, Alloc, Container>&,
-	                       const multiset<Key, Compare, Alloc, Container>&);
+	template <class K, class P, class A, template <class, class> class C>
+	friend bool operator==(const multiset<K, P, A, C>&,
+	                       const multiset<K, P, A, C>&);
+	template <class K, class P, class A, template <class, class> class C>
+	friend bool operator!=(const multiset<K, P, A, C>&,
+	                       const multiset<K, P, A, C>&);
+	template <class K, class P, class A, template <class, class> class C>
+	friend bool operator<(const multiset<K, P, A, C>&,
+	                      const multiset<K, P, A, C>&);
+	template <class K, class P, class A, template <class, class> class C>
+	friend bool operator<=(const multiset<K, P, A, C>&,
+	                       const multiset<K, P, A, C>&);
+	template <class K, class P, class A, template <class, class> class C>
+	friend bool operator>(const multiset<K, P, A, C>&,
+	                      const multiset<K, P, A, C>&);
+	template <class K, class P, class A, template <class, class> class C>
+	friend bool operator>=(const multiset<K, P, A, C>&,
+	                       const multiset<K, P, A, C>&);
 };
 
 //! equality
-template <class Key,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-bool operator==(const multiset<Key, Compare, Alloc, Container>& lhs,
-                const multiset<Key, Compare, Alloc, Container>& rhs)
+template <class K, class P, class A, template <class, class> class C>
+bool operator==(const multiset<K, P, A, C>& lhs,
+                const multiset<K, P, A, C>& rhs)
 {
 	return lhs.data == rhs.data;
 }
 
 //! inequality
-template <class Key,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-bool operator!=(const multiset<Key, Compare, Alloc, Container>& lhs,
-                const multiset<Key, Compare, Alloc, Container>& rhs)
+template <class K, class P, class A, template <class, class> class C>
+bool operator!=(const multiset<K, P, A, C>& lhs,
+                const multiset<K, P, A, C>& rhs)
 {
 	return lhs.data != rhs.data;
 }
 
 //! less than
-template <class Key,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator<(const multiset<Key, Compare, Alloc, Container>& lhs,
-                      const multiset<Key, Compare, Alloc, Container>& rhs)
+template <class K, class P, class A, template <class, class> class C>
+inline bool operator<(const multiset<K, P, A, C>& lhs,
+                      const multiset<K, P, A, C>& rhs)
 {
 	return lhs.data < rhs.data;
 }
 
 //! less or equal to
-template <class Key,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator<=(const multiset<Key, Compare, Alloc, Container>& lhs,
-                       const multiset<Key, Compare, Alloc, Container>& rhs)
+template <class K, class P, class A, template <class, class> class C>
+inline bool operator<=(const multiset<K, P, A, C>& lhs,
+                       const multiset<K, P, A, C>& rhs)
 {
 	return lhs.data <= rhs.data;
 }
 
 //! greater than
-template <class Key,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator>(const multiset<Key, Compare, Alloc, Container>& lhs,
-                      const multiset<Key, Compare, Alloc, Container>& rhs)
+template <class K, class P, class A, template <class, class> class C>
+inline bool operator>(const multiset<K, P, A, C>& lhs,
+                      const multiset<K, P, A, C>& rhs)
 {
 	return lhs.data > rhs.data;
 }
 
 //! greater or equal to
-template <class Key,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator>=(const multiset<Key, Compare, Alloc, Container>& lhs,
-                       const multiset<Key, Compare, Alloc, Container>& rhs)
+template <class K, class P, class A, template <class, class> class C>
+inline bool operator>=(const multiset<K, P, A, C>& lhs,
+                       const multiset<K, P, A, C>& rhs)
 {
 	return lhs.data >= rhs.data;
 }
 
 //! swap
-template <class Key,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline void swap(multiset<Key, Compare, Alloc, Container>& lhs,
-                 multiset<Key, Compare, Alloc, Container>&
-                     rhs) noexcept(noexcept(lhs.swap(rhs)))
+template <class K, class P, class A, template <class, class> class C>
+inline void swap(multiset<K, P, A, C>& lhs,
+                 multiset<K, P, A, C>& rhs) noexcept(noexcept(lhs.swap(rhs)))
 {
 	lhs.swap(rhs);
 }

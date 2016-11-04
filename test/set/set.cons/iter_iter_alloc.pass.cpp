@@ -57,7 +57,7 @@ TEST_CASE("set cons iter iter alloc pass")
     REQUIRE(*next(m.begin()) == 2);
     REQUIRE(*next(m.begin(), 2) == 3);
     }
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef int V;
     V ar[] =

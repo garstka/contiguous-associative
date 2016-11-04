@@ -43,6 +43,9 @@ TEST_CASE("map cons alloc pass")
     {
     typedef std::less<int> C;
     typedef explicit_allocator<std::pair<const int, double> > A;
+
+std::vector<std::pair<const int, double>,A> v(A{});
+
     contiguous::map<int, double, C, A> m(A{});
     REQUIRE(m.empty());
     REQUIRE(m.begin() == m.end());

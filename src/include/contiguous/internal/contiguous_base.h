@@ -60,13 +60,13 @@ public:
 	//! Constructs an empty container using the comparison object and allocator.
 	explicit contiguous_base(const key_compare& comp,
 	                         const allocator_type& alloc = allocator_type())
-	  : comparator(comp), data(alloc)
+	  : comparator(comp), data(get_impl_alloc(alloc))
 	{
 	}
 
 	//! Constructs an empty container using the allocator.
 	explicit contiguous_base(const allocator_type& alloc)
-	  : data(alloc), comparator(key_compare())
+	  : data(get_impl_alloc(alloc)), comparator(key_compare())
 	{
 	}
 
@@ -80,7 +80,7 @@ public:
 
 	//! Constructs by copying other, using a different allocator.
 	contiguous_base(const contiguous_base& other, const allocator_type& alloc)
-	  : data(other.data, alloc), comparator(other.comparator)
+	  : data(other.data, get_impl_alloc(alloc)), comparator(other.comparator)
 	{
 	}
 
@@ -96,7 +96,7 @@ public:
 
 	//! Constructs by moving other, using a different allocator.
 	contiguous_base(contiguous_base&& other, const allocator_type& alloc)
-	  : data(std::move(other.data), alloc),
+	  : data(std::move(other.data), get_impl_alloc(alloc)),
 	    comparator(std::move(other.comparator))
 	{
 	}
@@ -119,8 +119,8 @@ public:
 
 	//! Move-assigns other.
 	contiguous_base& operator=(contiguous_base&& other) noexcept(
-	    noexcept(data = std::move(other.data)) &&
-	    noexcept(comparator = other.comparator))
+	    noexcept(contiguous_base().data = std::move(other.data)) &&
+	    noexcept(contiguous_base().comparator = other.comparator))
 	{
 		data = std::move(other.data);
 		comparator = std::move(other.comparator);
@@ -130,9 +130,9 @@ public:
 	//! Returns the allocator for @c value_type.
 	allocator_type get_allocator() const noexcept
 	{
-		return std::allocator_traits<
+		return typename std::allocator_traits<
 		    typename impl_container_type::allocator_type>::
-		    rebind_alloc<value_type>(data.get_allocator());
+		    template rebind_alloc<value_type>(data.get_allocator());
 	}
 
 	/// @}
@@ -144,25 +144,25 @@ public:
 	//! Returns an iterator to the beginning.
 	iterator begin() noexcept
 	{
-		return data.begin();
+		return iterator(data.begin());
 	}
 
 	//! Returns a const iterator to the beginning.
 	const_iterator begin() const noexcept
 	{
-		return data.cbegin();
+		return const_iterator(data.cbegin());
 	}
 
 	//! Returns an iterator to the end.
 	iterator end() noexcept
 	{
-		return data.end();
+		return iterator(data.end());
 	}
 
 	//! Returns a const iterator to the end.
 	const_iterator end() const noexcept
 	{
-		return data.cend();
+		return const_iterator(data.cend());
 	}
 
 	// reverse
@@ -170,50 +170,50 @@ public:
 	//! Returns a reverse iterator to the beginning.
 	reverse_iterator rbegin() noexcept
 	{
-		return data.rbegin();
+		return std::make_reverse_iterator(end());
 	}
 
 	//! Returns a const reverse iterator to the beginning.
 	const_reverse_iterator rbegin() const noexcept
 	{
-		return data.crbegin();
+		return std::make_reverse_iterator(cend());
 	}
 
 	//! Returns a reverse iterator to the end.
 	reverse_iterator rend() noexcept
 	{
-		return data.rend();
+		return std::make_reverse_iterator(begin());
 	}
 
 	//! Returns a const reverse iterator to the end.
 	const_reverse_iterator rend() const noexcept
 	{
-		return data.crend();
+		return std::make_reverse_iterator(cbegin());
 	}
 	// const
 
 	//! Returns a const iterator to the beginning.
 	const_iterator cbegin() const noexcept
 	{
-		return data.cbegin();
+		return const_iterator(data.cbegin());
 	}
 
 	//! Returns a const iterator to the end.
 	const_iterator cend() const noexcept
 	{
-		return data.cend();
+		return const_iterator(data.cend());
 	}
 
 	//! Returns a const reverse iterator to the beginning.
 	const_reverse_iterator crbegin() const noexcept
 	{
-		return data.crbegin();
+		return std::make_reverse_iterator(cend());
 	}
 
 	//! Returns a const reverse iterator to the end.
 	const_reverse_iterator crend() const noexcept
 	{
-		return data.crend();
+		return std::make_reverse_iterator(cbegin());
 	}
 
 	/// @}
@@ -247,7 +247,9 @@ public:
 	//! Returns the iterator following the removed element.
 	iterator erase(const_iterator position)
 	{
-		return data.erase(position);
+		return iterator(data.erase(
+		    static_cast<typename impl_container_type::const_iterator>(
+		        position)));
 	}
 
 
@@ -255,13 +257,19 @@ public:
 	//! Returns the iterator following the last removed element.
 	iterator erase(const_iterator first, const_iterator last)
 	{
-		return data.erase(first, last);
+		return iterator(
+		    data.erase(static_cast<
+		                   typename impl_container_type::const_iterator>(first),
+		               static_cast<
+		                   typename impl_container_type::const_iterator>(
+		                   last)));
 	}
 
 	//! Exchanges the contents of the container with those of other.
 	void swap(contiguous_base& other) noexcept(
-	    noexcept(data.swap(other.data)) &&
-	    noexcept(internal::adl::swap_with_adl(comparator, other.comparator)))
+	    noexcept(contiguous_base().data.swap(other.data)) &&
+	    noexcept(internal::adl::swap_with_adl(other.comparator,
+	                                          other.comparator)))
 	{
 		using std::swap;
 		data.swap(other.data);
@@ -305,7 +313,9 @@ public:
 	//! Returns an iterator to the first element that compares not less than x.
 	//! Only participates in overload resolution,
 	//! if key_compare::is_transparent is valid and denotes a type.
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	iterator lower_bound(const K& x)
 	{
 		return std::lower_bound(begin(), end(), x, comparator);
@@ -314,7 +324,9 @@ public:
 	//! Const overload of lower_bound(x).
 	//! Only participates in overload resolution,
 	//! if key_compare::is_transparent is valid and denotes a type.
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	const_iterator lower_bound(const K& x) const
 	{
 		return std::lower_bound(cbegin(), cend(), x, comparator);
@@ -336,7 +348,9 @@ public:
 
 	//! Returns an iterator to the first element that compares greater than x.
 	//! if key_compare::is_transparent is valid and denotes a type.
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	iterator upper_bound(const K& x)
 	{
 		return std::upper_bound(begin(), end(), x, comparator);
@@ -344,7 +358,9 @@ public:
 
 	//! Const overload of upper_bound(x).
 	//! if key_compare::is_transparent is valid and denotes a type.
-	template <class K, class = key_compare::is_transparent>
+	template <class K,
+	          class = typename std::enable_if<
+	              internal::check_is_transparent<key_compare, K>::value>::type>
 	const_iterator upper_bound(const K& x) const
 	{
 		return std::upper_bound(cbegin(), cend(), x, comparator);
@@ -355,6 +371,13 @@ public:
 protected:
 	impl_container_type data; // Container for elements.
 	value_compare comparator; // Predicate used for comparison of elements.
-};
 
+private:
+	typename impl_container_type::allocator_type get_impl_alloc(
+	    const allocator_type& alloc)
+	{
+		return typename std::allocator_traits<
+		    allocator_type>::template rebind_alloc<impl_value_type>(alloc);
+	}
+};
 }

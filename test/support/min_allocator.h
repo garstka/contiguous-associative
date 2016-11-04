@@ -174,6 +174,15 @@ public:
 
     min_pointer& operator+=(difference_type n) {ptr_ += n; return *this;}
     min_pointer& operator-=(difference_type n) {ptr_ -= n; return *this;}
+	
+#ifdef MIN_PTR_GCC_FIX
+	#ifdef __GNUC__
+	operator pointer() const
+	{
+		return this->operator->();
+	}
+	#endif
+#endif
 
     min_pointer operator+(difference_type n) const
     {
@@ -245,6 +254,15 @@ public:
 
     min_pointer& operator+=(difference_type n) {ptr_ += n; return *this;}
     min_pointer& operator-=(difference_type n) {ptr_ -= n; return *this;}
+	
+#ifdef MIN_PTR_GCC_FIX
+	#ifdef __GNUC__
+	operator pointer() const
+	{
+		return this->operator->();
+	}
+	#endif
+#endif
 
     min_pointer operator+(difference_type n) const
     {

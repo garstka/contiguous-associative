@@ -30,7 +30,7 @@
 
 TEST_CASE("map ops find0 pass")
 {
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     typedef contiguous::map<int, double, transparent_less> M;
 
     M().find(C2Int{5});

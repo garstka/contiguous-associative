@@ -230,7 +230,7 @@ TEST_CASE("set equal range pass")
     REQUIRE(r.second == next(m.begin(), 8));
     }
 #endif
-#if _LIBCPP_STD_VER > 11
+#if LIBCPP_STD_VER > 11
     {
     typedef int V;
     typedef contiguous::set<V, std::less<>> M;

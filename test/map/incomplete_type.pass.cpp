@@ -14,6 +14,7 @@
 
 #include "defs.h"
 
+#ifndef MAP_REQUIRE_COMPLETE_TYPE
 #include "catch.hpp"
 
 #include "contiguous/map.h"
@@ -31,3 +32,4 @@ inline bool operator<(A const& L, A const& R)  { return L.data < R.data; }
 TEST_CASE("map incomplete type pass") {
     A a;
 }
+#endif

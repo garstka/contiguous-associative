@@ -1,8 +1,6 @@
 #pragma once
 
-#include <vector>
-
-#include "contiguous_multi_base.h"
+#include "internal/contiguous_multi_base.h"
 
 /**
     @file multimap.h
@@ -35,6 +33,8 @@ private:
 	// the base class, same as above
 	using MyBase = contiguous_multi_base<
 	    internal::map_traits<Key, T, Compare, Alloc, Container>>;
+
+	using typename MyBase::impl_container_type;
 
 public:
 	//! @name types
@@ -169,7 +169,7 @@ public:
 
 	//! Move-assigns other.
 	multimap& operator=(multimap&& other) noexcept(
-	    noexcept(MyBase::operator=(std::move(other))))
+	    noexcept(other.MyBase::operator=(std::move(other))))
 	{
 		MyBase::operator=(std::move(other));
 		return *this;
@@ -185,144 +185,150 @@ public:
 	}
 
 	/// @}
+	//! @name modifiers
+	/// @{
+
+
+	//! Erases all elements matching the key (at most 1 in a map/set).
+	//! Returns the erased element count.
+	size_type erase(const key_type& key)
+	{
+		return MyBase::erase(key);
+	}
+
+	//! Erases the element at @c position.
+	//! Returns the iterator following the removed element.
+	iterator erase(const_iterator position)
+	{
+		return MyBase::erase(position, size_t());
+	}
+
+	//! @c erase(pos) - fix for an ambiguity.
+	//! See: http://www.open-std.org/jtc1/sc22/wg21/docs/lwg-defects.html#2059
+	template <class = std::enable_if_t<
+	              !std::is_same<iterator, const_iterator>::value>>
+	iterator erase(iterator position)
+	{
+		return MyBase::erase(position, size_t());
+	}
+
+	//! Erases the elements in the range [first,last).
+	//! Returns the iterator following the last removed element.
+	iterator erase(const_iterator first, const_iterator last)
+	{
+		return MyBase::erase(first, last);
+	}
+
+	/// @}
 	//! @name observers
 	/// @{
 
 	//! Returns a copy of the key comparator.
 	key_compare key_comp() const
 	{
-		return comparator.key_comp();
+		return this->comparator.key_comp();
 	}
 
 	/// @}
 
 	// friend operators
 
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator==(const multimap<Key, T, Compare, Alloc, Container>&,
-	                       const multimap<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator!=(const multimap<Key, T, Compare, Alloc, Container>&,
-	                       const multimap<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator<(const multimap<Key, T, Compare, Alloc, Container>&,
-	                      const multimap<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator<=(const multimap<Key, T, Compare, Alloc, Container>&,
-	                       const multimap<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator>(const multimap<Key, T, Compare, Alloc, Container>&,
-	                      const multimap<Key, T, Compare, Alloc, Container>&);
-	template <class Key,
-	          class T,
-	          class Compare,
-	          class Alloc,
-	          template <class V, class A> class Container>
-	friend bool operator>=(const multimap<Key, T, Compare, Alloc, Container>&,
-	                       const multimap<Key, T, Compare, Alloc, Container>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator==(const multimap<K, M, P, A, C>&,
+	                       const multimap<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator!=(const multimap<K, M, P, A, C>&,
+	                       const multimap<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator<(const multimap<K, M, P, A, C>&,
+	                      const multimap<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator<=(const multimap<K, M, P, A, C>&,
+	                       const multimap<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator>(const multimap<K, M, P, A, C>&,
+	                      const multimap<K, M, P, A, C>&);
+	template <class K,
+	          class M,
+	          class P,
+	          class A,
+	          template <class, class> class C>
+	friend bool operator>=(const multimap<K, M, P, A, C>&,
+	                       const multimap<K, M, P, A, C>&);
 };
 
 //! equality
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-bool operator==(const multimap<Key, T, Compare, Alloc, Container>& lhs,
-                const multimap<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+bool operator==(const multimap<K, M, P, A, C>& lhs,
+                const multimap<K, M, P, A, C>& rhs)
 {
 	return lhs.data == rhs.data;
 }
 
 //! inequality
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-bool operator!=(const multimap<Key, T, Compare, Alloc, Container>& lhs,
-                const multimap<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+bool operator!=(const multimap<K, M, P, A, C>& lhs,
+                const multimap<K, M, P, A, C>& rhs)
 {
 	return lhs.data != rhs.data;
 }
 
 //! less than
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator<(const multimap<Key, T, Compare, Alloc, Container>& lhs,
-                      const multimap<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator<(const multimap<K, M, P, A, C>& lhs,
+                      const multimap<K, M, P, A, C>& rhs)
 {
 	return lhs.data < rhs.data;
 }
 
 //! less or equal to
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator<=(const multimap<Key, T, Compare, Alloc, Container>& lhs,
-                       const multimap<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator<=(const multimap<K, M, P, A, C>& lhs,
+                       const multimap<K, M, P, A, C>& rhs)
 {
 	return lhs.data <= rhs.data;
 }
 
 //! greater than
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator>(const multimap<Key, T, Compare, Alloc, Container>& lhs,
-                      const multimap<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator>(const multimap<K, M, P, A, C>& lhs,
+                      const multimap<K, M, P, A, C>& rhs)
 {
 	return lhs.data > rhs.data;
 }
 
 //! greater or equal to
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline bool operator>=(const multimap<Key, T, Compare, Alloc, Container>& lhs,
-                       const multimap<Key, T, Compare, Alloc, Container>& rhs)
+template <class K, class M, class P, class A, template <class, class> class C>
+inline bool operator>=(const multimap<K, M, P, A, C>& lhs,
+                       const multimap<K, M, P, A, C>& rhs)
 {
 	return lhs.data >= rhs.data;
 }
 
 //! swap
-template <class Key,
-          class T,
-          class Compare,
-          class Alloc,
-          template <class V, class A> class Container>
-inline void swap(multimap<Key, T, Compare, Alloc, Container>& lhs,
-                 multimap<Key, T, Compare, Alloc, Container>&
-                     rhs) noexcept(noexcept(lhs.swap(rhs)))
+template <class K, class M, class P, class A, template <class, class> class C>
+inline void swap(multimap<K, M, P, A, C>& lhs,
+                 multimap<K, M, P, A, C>& rhs) noexcept(noexcept(lhs.swap(rhs)))
 {
 	lhs.swap(rhs);
 }
